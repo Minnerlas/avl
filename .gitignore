@@ -1,0 +1,4 @@
+*.o
+avl
+*.dot
+*.png
