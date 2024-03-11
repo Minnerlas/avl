@@ -230,8 +230,8 @@ struct avl_node *avl_swap_successor(struct avl_node **root, struct avl_node *X,
 	return ret;
 }
 
-struct avl_node *avl_del_rebalance(struct avl_node **root, struct avl_node *parent,
-		int sign, int *left_deleted) {
+struct avl_node *avl_del_rebalance(struct avl_node **root,
+		struct avl_node *parent, int sign, int *left_deleted) {
 	struct avl_node *node;
 
 	int oldbf = avl_bf(parent);
@@ -246,12 +246,13 @@ struct avl_node *avl_del_rebalance(struct avl_node **root, struct avl_node *pare
 		parent->parbf += sign;
 		node = parent;
 	} else {
-		node = avl_child(parent, newbf);
+		node = avl_child(parent, sign);
 
 		if (sign * avl_bf(node) >= 0) {
 			avl_rotate(root, parent, -sign);
-			if (avl_bf(parent) == 0) {
-				parent->parbf -= sign;
+
+			if (avl_bf(node) == 0) {
+				node->parbf -= sign;
 				return NULL;
 			} else {
 				parent->parbf -= sign;
