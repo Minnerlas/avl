@@ -22,9 +22,7 @@ struct avl_node {
 };
 
 uint64_t avl_find(struct avl_node *root, uint64_t key);
-struct avl_node *avl_find_node(struct avl_node *root, uint64_t key);
 void avl_insert(struct avl_node **root, uint64_t key, uint64_t value);
-void avl_delete_node(struct avl_node **root, struct avl_node *node);
 void avl_delete(struct avl_node **root, uint64_t key);
 
 #endif /* AVL_H */
