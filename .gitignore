@@ -2,3 +2,7 @@
 avl
 *.dot
 *.png
+*.gif
+
+.cache
+compile_commands.json

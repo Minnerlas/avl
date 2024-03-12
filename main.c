@@ -1,3 +1,4 @@
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,21 +38,35 @@ void print_avl(int level, struct avl_node *root) {
 	}
 }
 
-int main() {
-	struct avl_node *root = NULL;
+#define COUNT 50
 
-	srand(10);
-	for (int i = 0; i < 14; i++)
-		avl_insert(&root, rand(), i);
+int main(int argc, char **argv) {
+	(void)argc;
+	(void)argv;
+
+	struct avl_node *root = NULL;
+	unsigned seed = time(NULL);
+	// unsigned seed = 1710195314;
+
+	printf("SEED = %u\n", seed);
+
+	srand(seed);
+	for (int i = 0; i < COUNT; i++)
+		avl_insert(&root, rand() % (100 * COUNT), i);
 
 	print_avl_dot("avl.dot", root);
 
-	srand(10);
-	for (int i = 0; i < 14; i++)
-		avl_delete(&root, rand());
+	srand(seed);
+	for (int i = 0; i < COUNT; i++) {
+		uint64_t key = rand() % (100 * COUNT);
+		printf("DELETE %ld\n", key);
+		char *path;
+		asprintf(&path, "dots/avl-%05d-%05ld.dot", i, key);
+		print_avl_dot(path, root);
+		free(path);
+		avl_delete(&root, key);
+	}
 
 
 	print_avl(0, root);
-
-	printf("%d\n", RAND_MAX);
 }
