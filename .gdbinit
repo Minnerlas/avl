@@ -7,6 +7,7 @@ skip avl_delete
 skip avl_find_node
 skip bucket_index
 skip indexsz
+skip getpage
 skip enable
 
 b main
