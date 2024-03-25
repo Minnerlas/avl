@@ -151,7 +151,10 @@ struct alloc_header *find_half(struct alloc_header *hdr) {
 
 void avl_free_hdr(struct alloc_header *hdr) {
 	struct alloc_header *half;
-	int i = bucket_index(hdr->sz);
+	int i;
+
+	if (!hdr) return;
+	i = bucket_index(hdr->sz);
 
 	half = find_half(hdr);
 	if (!half) {
