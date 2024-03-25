@@ -4,8 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define KEY(node) ((uintptr_t)(node))
+
 struct avl_node {
-	uint64_t key;
 	uint64_t value;
 
 	struct avl_node *left;
@@ -21,8 +22,8 @@ struct avl_node {
 	uintptr_t parbf;
 };
 
-uint64_t avl_find(struct avl_node *root, uint64_t key);
-void avl_insert(struct avl_node **root, uint64_t key, uint64_t value);
-void avl_delete(struct avl_node **root, uint64_t key);
+struct avl_node *avl_find_node(struct avl_node *root, uintptr_t key);
+void avl_insert(struct avl_node **root, void *key, uint64_t value);
+void avl_delete(struct avl_node **root, void *key);
 
 #endif /* AVL_H */

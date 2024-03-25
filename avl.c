@@ -1,13 +1,11 @@
 #include "avl.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#define ABORT(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
+#include <string.h>
 
 static int avl_bf(struct avl_node *node) {
 	return (int)(node->parbf & 3) - 1;
 }
-
 
 static struct avl_node *avl_parent(struct avl_node *node) {
 	return (struct avl_node *)(node->parbf & ~3);
@@ -150,52 +148,41 @@ static void avl_insert_rebalance(struct avl_node **root, struct avl_node *new) {
 	}
 }
 
-void avl_insert(struct avl_node **root, uint64_t key, uint64_t value) {
+void avl_insert(struct avl_node **root, void *node, uint64_t value) {
 	struct avl_node *cur = NULL, **curp = root;
+	uintptr_t key = (uintptr_t)node;
 
 	while (*curp) {
 		cur = *curp;
 
-		if (key < cur->key) {
+		if (key < KEY(cur)) {
 			curp = &cur->left;
-		} else if (key > cur->key) {
+		} else if (key > KEY(cur)) {
 			curp = &cur->right;
 		} else
-			ABORT("Key %lu already exists\n", key);
+			fprintf(stderr, "Key %lu already exists\n", key), exit(1);
 	}
 
-	*curp = malloc(sizeof **curp); /* NOTE: This is where we change stuff */
-	if (!*curp) ABORT("Out of memory\n");
-
-	**curp = (struct avl_node) {
-		.key = key,
-		.value = value,
-		.parbf = (uintptr_t)cur | 1, /* BF of 0 */
-	};
+	*curp = (struct avl_node *)key,
+	memset(*curp, 0, sizeof (struct avl_node));
+	(*curp)->value = value,
+	(*curp)->parbf = (uintptr_t)cur | 1;
 	avl_insert_rebalance(root, *curp);
 }
 
-static struct avl_node *avl_find_node(struct avl_node *root, uint64_t key) {
+ struct avl_node *avl_find_node(struct avl_node *root, uintptr_t key) {
 	struct avl_node *cur = root;
 
 	while (cur) {
-		if (key < cur->key)
+		if (key < KEY(cur))
 			cur = cur->left;
-		else if (key > cur->key)
+		else if (key > KEY(cur))
 			cur = cur->right;
 		else
 			return cur;
 	}
 
 	return NULL;
-}
-
-uint64_t avl_find(struct avl_node *root, uint64_t key) {
-	struct avl_node *node = avl_find_node(root, key);
-	if (!node)
-		return 0; /* TODO wat do */
-
-	return node->value;
 }
 
 static struct avl_node *avl_swap_successor(struct avl_node **root,
@@ -270,8 +257,8 @@ static struct avl_node *avl_del_rebalance(struct avl_node **root,
 	return parent;
 }
 
-static void avl_delete_node(struct avl_node **root, struct avl_node *node) {
-	struct avl_node *parent, *child;
+void avl_delete(struct avl_node **root, void *key) {
+	struct avl_node *parent, *child, *node = (struct avl_node *)key;
 	int left_deleted = 0;
 
 	if (node->left && node->right) {
@@ -306,12 +293,4 @@ static void avl_delete_node(struct avl_node **root, struct avl_node *node) {
 		else
 			parent = avl_del_rebalance(root, parent, -1, &left_deleted);
 	} while (parent);
-}
-
-void avl_delete(struct avl_node **root, uint64_t key) {
-	struct avl_node *node = avl_find_node(*root, key);
-	if (!node)
-		return;
-	avl_delete_node(root, node);
-	free(node); /* NOTE: This is where we do stuff */
 }
