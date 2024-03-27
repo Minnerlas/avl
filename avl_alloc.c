@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "avl.h"
 #include "avl_alloc.h"
 
 #define PAGESZ 4096
@@ -19,9 +20,13 @@
  */
 struct avl_node *roots[NUM_BUCKETS] = {0};
 
+#define ALLOC_HDR(hdr) ((struct alloc_header *)((char *)(hdr) \
+			- sizeof(struct alloc_header)))
+
 struct alloc_header {
-	size_t sz;
-	size_t _pad;
+	uint32_t sz;    /* bucket size of the allocation */
+	uint32_t reqsz; /* TODO: requested alloc size */
+	uint64_t _pad1; /* TODO: cpu id maybe? */
 };
 
 /*
@@ -103,6 +108,7 @@ struct alloc_header *split_bucket(int idx) {
 
 void *avl_alloc(size_t sz) {
 	int i;
+	size_t reqsz = sz;
 	struct alloc_header *hdr;
 
 	sz += sizeof(struct alloc_header);
@@ -122,6 +128,7 @@ void *avl_alloc(size_t sz) {
 		hdr->sz = sz;
 	}
 
+	hdr->reqsz = reqsz;
 	return (char *)hdr + sizeof(struct alloc_header);
 }
 
@@ -175,6 +182,37 @@ void avl_free_hdr(struct alloc_header *hdr) {
  * TODO: Think about concurrency
  */
 void avl_free(void *ptr) {
-	struct alloc_header *hdr = (void *)((char *)ptr - sizeof(struct alloc_header));
-	avl_free_hdr(hdr);
+	avl_free_hdr(ALLOC_HDR(ptr));
+}
+
+void *avl_realloc(void *ptr, size_t sz) {
+	struct alloc_header *hdr;
+	size_t oldavailsz;
+
+	if (!ptr)
+		return avl_alloc(sz);
+
+	if (!sz) {
+		avl_free(ptr);
+		return NULL;
+	}
+
+	hdr = ALLOC_HDR(ptr);
+	oldavailsz = hdr->sz - sizeof(struct alloc_header);
+
+	if (oldavailsz < sz) {
+		void *newptr = avl_alloc(sz);
+
+		if (!newptr)
+			return NULL;
+
+		memcpy(newptr, ptr, hdr->reqsz);
+		ALLOC_HDR(newptr)->reqsz = sz;
+
+		avl_free(ptr);
+		return newptr;
+	}
+
+	hdr->reqsz = sz;
+	return ptr;
 }
